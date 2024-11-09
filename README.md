@@ -138,6 +138,21 @@ You can browse available community roles [here](https://galaxy.ansible.com/ui/).
 
 >### Hint: To preserve your your GitHub in actual state after you install a new role – make a commit and push to master your ansible-config-mgt directory. Of course you must have git installed and configured on Jenkins-Ansible server and, for more convenient work with codes, you can configure Visual Studio Code to work with this directory. In this case, you will no longer need webhook and Jenkins jobs to update your codes on Jenkins-Ansible server, so you can disable it – we will be using Jenkins later for a better purpose.
 
+On Jenkins-Ansible server make sure that git is installed by running:
+
+```
+git --version
+cd ansible-config-mgt
+git init
+git pull https://github.com/<your-name>/ansible-config-mgt.git
+git remote add origin https://github.com/<your-name>/ansible-config-mgt.git
+git branch roles-feature
+git switch roles-feature
+```
+
+![image](https://github.com/user-attachments/assets/e1284b80-0a6f-44c9-bdfc-442830400b85)
+
+
 
 
 
