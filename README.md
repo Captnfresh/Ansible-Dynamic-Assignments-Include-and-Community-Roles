@@ -1,1 +1,1 @@
-# git-checkout--b-dynamic-assignments
+# ANSIBLE DYNAMIC ASSIGNMENTS (INCLUDE) AND COMMUNITY ROLES
