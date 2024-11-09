@@ -126,6 +126,7 @@ Update `site.yml` file to make use of the dynamic assignment. (At this point, we
 - name: Webserver assignment
   import_playbook: ../static-assignments/webservers.yml
 ```
+![image](https://github.com/user-attachments/assets/889d034d-3000-404b-a56d-cd5898e7628b)
 
 
 
