@@ -158,7 +158,7 @@ git switch roles-feature
 
 ![image](https://github.com/user-attachments/assets/0319330f-2d68-4156-808a-0925cda6d542)
 
-4. Kindly avigate to `mysql/vars/main.yml`.
+4. Kindly navigate to `mysql/vars/main.yml`.
 
 ```
 mysql_root_password: ""
@@ -196,11 +196,25 @@ mysql_users:
 import_playbook: ../static-assignments/db-servers.yml
 ```
 
+![image](https://github.com/user-attachments/assets/589ceaaf-d509-4e5f-8d65-8a51e8c9673f)
+
+7. Now it is time to upload the changes into your GitHub:
+
+```
+git add .
+git commit -m "Commit new role files into GitHub"
+git push --set-upstream origin roles-feature
+```
+![image](https://github.com/user-attachments/assets/7c0e6ed8-d008-47a1-8ccd-59834959fcd8)
+
+![image](https://github.com/user-attachments/assets/36b61810-62eb-434b-8c76-0ab0764d2733)
+
+8. Merge the Code.
+
+![image](https://github.com/user-attachments/assets/054d3b76-e3ed-4b0f-8514-9148a6102a01)
 
 
-
-
-
+## Step 3: Load Balancer Roles
 
 
 
