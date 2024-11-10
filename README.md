@@ -216,15 +216,29 @@ git push --set-upstream origin roles-feature
 
 
 ## Step 3: Load Balancer Roles
+For this project , we will be making use of NGINX and APACHE as load balancers, so we need to create roles for them using same method as we did for mysql
 
+1. Download and install roles for apache, we can get this role from same source as mysql.
 
+```
+ansible-galaxy role install geerlingguy.apache
+```
+2. Download and install roles for nginx, we can get this role from same source as mysql.
 
+```
+ansible-galaxy role install geerlingguy.nginx
+```
+3. Rename the folder to apache
 
+```
+mv geerlingguy.apache/ apache
+```
+4. Rename the folder to nginx
+```
+mv geerlingguy.nginx/ nginx
+```
 
-
-
-
-
+![image](https://github.com/user-attachments/assets/e72394a1-5e14-40ad-b1f1-65d2c4efe7a4)
 
 
 
