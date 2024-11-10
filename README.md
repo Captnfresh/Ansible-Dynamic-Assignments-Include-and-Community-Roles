@@ -108,7 +108,7 @@ In the same version, variants of import were also introduces, such as:
 
 
 ## Step 2: Update site.yml with dynamic assignments 
-Update `site.yml` file to make use of the dynamic assignment. (At this point, we cannot test it yet. We are just setting the stage for what is yet to come. So hang on to your hats)
+1. Update `site.yml` file to make use of the dynamic assignment. (At this point, we cannot test it yet. We are just setting the stage for what is yet to come. So hang on to your hats)
 
 `site.yml` should now look like this.
 
@@ -138,7 +138,7 @@ You can browse available community roles [here](https://galaxy.ansible.com/ui/).
 
 >### Hint: To preserve your your GitHub in actual state after you install a new role – make a commit and push to master your ansible-config-mgt directory. Of course you must have git installed and configured on Jenkins-Ansible server and, for more convenient work with codes, you can configure Visual Studio Code to work with this directory. In this case, you will no longer need webhook and Jenkins jobs to update your codes on Jenkins-Ansible server, so you can disable it – we will be using Jenkins later for a better purpose.
 
-On Jenkins-Ansible server make sure that git is installed by running:
+2. On Jenkins-Ansible server make sure that git is installed by running:
 
 ```
 git --version
@@ -152,15 +152,49 @@ git switch roles-feature
 
 ![image](https://github.com/user-attachments/assets/e1284b80-0a6f-44c9-bdfc-442830400b85)
 
+3. Inside the `mysql/vars/main.yml`, configure your db credentials. These credentials will be used to connect to our website later on. 
 
+![image](https://github.com/user-attachments/assets/97eb0c33-67b0-472a-a10f-2d2b79252c29)
 
+![image](https://github.com/user-attachments/assets/0319330f-2d68-4156-808a-0925cda6d542)
 
+4. Kindly avigate to `mysql/vars/main.yml`.
 
+```
+mysql_root_password: ""
+mysql_databases:
+  - name: tooling
+    encoding: utf8
+    collation: utf8_general_ci
+mysql_users:
+  - name: webaccess
+    host: "172.31.0.0/20"
+    password: Admin123
+    priv: "tooling.*:ALL"
+```
 
+![image](https://github.com/user-attachments/assets/1e94d42f-9c26-4886-8fef-75806bbbf52b)
 
+5. Create a new playbook inside static-assignments folder and call it db-servers.yml , update it with the created roles. use the code below.
 
+```
+- hosts: db_servers
+  become: yes
+  vars_files:
+    - vars/main.yml
+  roles:
+    - { role: mysql }
+```
 
+![image](https://github.com/user-attachments/assets/8813e1b3-529a-4fbb-b17e-0c39f0b14a4a)
 
+![image](https://github.com/user-attachments/assets/e0a70da8-175e-4a6d-bef3-26e79f8d827f)
+
+6. Now return to playbook which is the `playbooks/site.yml` and reference the newly created `db-servers` playbook, add the code below to import it into the main playbook.
+
+```
+import_playbook: ../static-assignments/db-servers.yml
+```
 
 
 
