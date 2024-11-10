@@ -10,7 +10,6 @@ Let’s walk through this step-by-step and make it clear for you. This part is a
 ```
 git checkout -b dynamic-assignments
 ```
-![image](https://github.com/user-attachments/assets/20fdce3e-e1eb-424a-9634-efa907f65624)
 This branch will hold our dynamic configuration changes.
 
 2. Create the dynamic-assignments Folder. Create a new folder called `dynamic-assignments` in your repository.
@@ -23,7 +22,6 @@ mkdir dynamic-assignments
 ```
 touch dynamic-assignments/env-vars.yml
 ```
-![image](https://github.com/user-attachments/assets/838e4343-2841-4507-b259-363f583bb90b)
 
 By now, your GitHub repository should look like this:
 ```
@@ -45,7 +43,6 @@ Since we will be using the same Ansible to configure multiple environments, and 
 
 For this reason, we will now create a folder to keep each environment’s variables file. Therefore, create a new folder `env-vars`, then for each environment, create new YAML files which we will use to set variables.
 
-![image](https://github.com/user-attachments/assets/60424e46-4988-47e7-a5ff-e42a65d1de87)
 
 Your layout should now look like this
 ```
@@ -88,7 +85,11 @@ Your layout should now look like this
       tags:
         - always
 ```
-![image](https://github.com/user-attachments/assets/a442a168-cbf0-4833-8750-ad40d8a079f3)
+![image](https://github.com/user-attachments/assets/82c6abb6-94e8-4c08-9152-915e9ac7c2c1)
+
+
+![image](https://github.com/user-attachments/assets/71babc77-7b96-4479-b855-27f500ffc16f)
+
 
 ## Notice 3 things to notice here:
 
