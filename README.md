@@ -611,6 +611,8 @@ become: yes
         }
     {% endfor %}
   }
+{% endfor %}
+
 ```
 ![image](https://github.com/user-attachments/assets/9f16d50c-9bef-4eeb-a6b3-c0533a5902fb)
 
@@ -625,66 +627,66 @@ become: yes
   become: true
   become_user: root
   ansible.builtin.yum:
-      name: "httpd"
-      state: present
-                   
+    name: "httpd"
+    state: present
+
 - name: Install Git
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.yum:
-     name: "git"
-     state: present
-                   
+    name: "git"
+    state: present
+
 - name: Install EPEL release
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.command:
-     cmd: sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
-                   
+    cmd: sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
+
 - name: Install dnf-utils and Remi repository
-   remote_user: ec2-user
-   become: true
-   become_user: root
-   ansible.builtin.command:
-     cmd: sudo dnf install dnf-utils http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y
-                   
+  remote_user: ec2-user
+  become: true
+  become_user: root
+  ansible.builtin.command:
+    cmd: sudo dnf install dnf-utils http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y
+
 - name: Reset PHP module
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.command:
-     cmd: sudo dnf module reset php -y
-                   
+    cmd: sudo dnf module reset php -y
+
 - name: Enable PHP 7.4 module
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.command:
-     cmd: sudo dnf module enable php:remi-7.4 -y
-                   
+    cmd: sudo dnf module enable php:remi-7.4 -y
+
 - name: Install PHP and extensions
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.yum:
-   name:
-     - php
-     - php-opcache
-     - php-gd
-     - php-curl
-     - php-mysqlnd
-   state: present
-                   
+    name:
+      - php
+      - php-opcache
+      - php-gd
+      - php-curl
+      - php-mysqlnd
+    state: present
+
 - name: Install MySQL client
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.yum:
-   name: "mysql"
-   state: present
-                   
+    name: "mysql"
+    state: present
+
 - name: Start PHP-FPM service
   remote_user: ec2-user
   become: true
@@ -692,66 +694,88 @@ become: yes
   ansible.builtin.service:
     name: php-fpm
     state: started
-                   
+
 - name: Enable PHP-FPM service
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.service:
-   name: php-fpm
-   enabled: true
-                   
+    name: php-fpm
+    enabled: true
+
 - name: Set SELinux boolean for httpd_execmem
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.command:
-   cmd: sudo setsebool -P httpd_execmem 1
-                   
+    cmd: sudo setsebool -P httpd_execmem 1
+
 - name: Clone a repo
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.git:
-   repo: https://github.com/citadelict/tooling.git
-   dest: /var/www/html
-   force: yes
-                   
+    repo: https://github.com/Captnfresh/tooling.git
+    dest: /var/www/html
+    force: yes
+
 - name: Copy HTML content to one level up
   remote_user: ec2-user
   become: true
   become_user: root
-   command: cp -r /var/www/html/html/ /var/www/
-                   
+  command: cp -r /var/www/html/html/ /var/www/
+
 - name: Start httpd service, if not started
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.service:
-   name: httpd
-   state: started
-                   
+    name: httpd
+    state: started
+
 - name: Recursively remove /var/www/html/html directory
   remote_user: ec2-user
   become: true
   become_user: root
   ansible.builtin.file:
-   path: /var/www/html/html
-   state: absent
+    path: /var/www/html/html
+    state: absent
 ```
 
-![image](https://github.com/user-attachments/assets/fce3719f-3248-4df6-a7d8-4aa0c34b1021)
-
-* The code above tells ansible to install apache on the webservers , install git, install php and all its dependencies, clone the website from out github repo,as well ascopy the website files into the /var/www/html directory.
+* The code above tells ansible to install apache on the webservers , install git, install php and all its dependencies, clone the website from our github repo,as well as copy the website files into the /var/www/html directory.
 * Create a pull request and merge with your main branch of your github repo.
 * Login to your ansible server via terminal and change directory into your ansible project, pull the recent changes done into your server
 
 
+## Final Test and Validation
 
+1. Setup Inventory for Each Environment: Update inventory files to include environment-specific servers.
 
+```
+[uat_webservers]
+<server1-ip-address> ansible_ssh_user=ec2-user
+<server2-ip-address> ansible_ssh_user=ec2-user
 
+[lb]
+<lb-instance-ip> ansible_ssh_user=ubuntu 
 
+[db]
+<db-instance-ip> ansible_ssh_user=ubuntu  
+```
 
+2. Run Playbooks: Execute playbooks for different environments to validate that variables and roles are correctly applied.
+
+```
+ansible-playbook -i inventory/uat.yml playbooks/site.yml
+```
+![image](https://github.com/user-attachments/assets/7a023751-af07-4441-a220-37665eef3a7f)
+
+3. Test Loadbalancer public IP on browser:
+
+```
+http://<Public IP address of LB server>/info.php
+```
+![image](https://github.com/user-attachments/assets/7acdcec3-b9d2-49d5-aa0f-2b70500520e5)
 
 
 
