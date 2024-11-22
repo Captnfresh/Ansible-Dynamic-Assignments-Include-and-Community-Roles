@@ -113,21 +113,22 @@ In the same version, variants of import were also introduces, such as:
 
 `site.yml` should now look like this.
 
-```
----
-- hosts: all
-- name: Include dynamic variables 
+```---
+# Play for including dynamic variables
+- name: Include dynamic variables
+  hosts: all
+  become: yes
   tasks:
-  import_playbook: ../static-assignments/common.yml 
-  include: ../dynamic-assignments/env-vars.yml
-  tags:
-    - always
-
--  hosts: webservers
-- name: Webserver assignment
-  import_playbook: ../static-assignments/webservers.yml
+    - name: Load dynamic variables
+      include_tasks: ../dynamic-assignments/env-vars.yml
+      tags:
+        - always
+- import_playbook: ../static-assignments/uat-webservers.yml
+- import_playbook: ../static-assignments/loadbalancers.yml
+  when: load_balancer_is_required
+- import_playbook: ../static-assignments/db-servers.yml
 ```
-![image](https://github.com/user-attachments/assets/889d034d-3000-404b-a56d-cd5898e7628b)
+![image](https://github.com/user-attachments/assets/43aca586-e430-44a8-999f-7ca4bcf377bc)
 
 ### Community Roles
 Now it is time to create a role for MySQL database – it should install the MySQL package, create a database and configure users. But why should we re-invent the wheel? There are tons of roles that have already been developed by other open source engineers out there. These roles are actually production ready, and dynamic to accomodate most of Linux flavours. With Ansible Galaxy again, we can simply download a ready to use ansible role, and keep going.
@@ -179,17 +180,18 @@ mysql_users:
 5. Create a new playbook inside static-assignments folder and call it db-servers.yml , update it with the created roles. use the code below.
 
 ```
-- hosts: db_servers
+---
+- hosts: db
   become: yes
   vars_files:
     - vars/main.yml
   roles:
-    - { role: mysql }
+    - role: mysql
 ```
 
 ![image](https://github.com/user-attachments/assets/8813e1b3-529a-4fbb-b17e-0c39f0b14a4a)
 
-![image](https://github.com/user-attachments/assets/e0a70da8-175e-4a6d-bef3-26e79f8d827f)
+![image](https://github.com/user-attachments/assets/34010d26-be9e-4108-9bc8-0e2b5b7274e1)
 
 6. Now return to playbook which is the `playbooks/site.yml` and reference the newly created `db-servers` playbook, add the code below to import it into the main playbook.
 
@@ -240,16 +242,14 @@ mv geerlingguy.nginx/ nginx
 
 ![image](https://github.com/user-attachments/assets/e72394a1-5e14-40ad-b1f1-65d2c4efe7a4)
 
-5. Since we cannot use both apache and nginx load balancer at the same time, it is advisable to create a condition that enables either one of the two, to do this, Declare a variable in roles/apache/defaults/main.yml file inside the apache role, name the variable enable_apache_lb. Declare another variable that ensures either one of the load balancer is required and set it to false.
+5. Since we cannot use both apache and nginx load balancer at the same time, it is advisable to create a condition that enables either one of the two, to do this, Declare a variable in `roles/apache/defaults/main.yml` file inside the apache role, name the variable `enable_apache_lb`. Declare another variable that ensures either one of the load balancer is required and set it to false.
 
 ```
 enable_apache_lb: false
 load_balancer_is_required : false
 ```
 
-![image](https://github.com/user-attachments/assets/5807bbdb-323c-4f4f-a2fb-532ef946f8e7)
-
-![image](https://github.com/user-attachments/assets/f7f34727-a99d-4147-8e17-43cd40c9425e)
+![image](https://github.com/user-attachments/assets/ce6f7279-d2ee-4252-b4d0-74e527b1ac7f)
 
 6. Create a new playbook in `static-assignments` and call it `loadbalancers.yml`, update it with code below:
 
@@ -258,45 +258,43 @@ load_balancer_is_required : false
 ```
 ---
 - hosts: lb
-  become: yes
   roles:
-    - role: nginx
-      when: enable_nginx_lb | bool and load_balancer_is_required | bool
-    - role: apache
-      when: enable_apache_lb | bool and load_balancer_is_required | bool
+    - { role: nginx, when: enable_nginx_lb and load_balancer_is_required }
+    - { role: apache, when: enable_apache_lb and load_balancer_is_required }
 ```
 
 
-![image](https://github.com/user-attachments/assets/b7f4d2f5-8043-49d1-bc9d-7bfa643bf6df)
+![image](https://github.com/user-attachments/assets/96d3f95d-f5f7-4ec6-b507-80186c23cc07)
 
 7. Now, inside your general playbook `site.yml` file, dynamically import the load balancer playbook so it can use the roles weve created:
 ```
 ---
-- hosts: all
-  name: Include dynamic variables
+# Play for including dynamic variables
+- name: Include dynamic variables
+  hosts: all
   become: yes
   tasks:
-    - include_tasks: ../dynamic-assignments/env-vars.yml
+    - name: Load dynamic variables
+      include_tasks: ../dynamic-assignments/env-vars.yml
       tags:
         - always
-
-- import_playbook: ../static-assignments/common.yml
-- import_playbook: ../static-assignments/uat_webservers.yml
+- import_playbook: ../static-assignments/uat-webservers.yml
 - import_playbook: ../static-assignments/loadbalancers.yml
+  when: load_balancer_is_required
 - import_playbook: ../static-assignments/db-servers.yml
 ```
 
-![image](https://github.com/user-attachments/assets/8d8ff43c-c5ef-4838-88ef-537d7a2ef0ac)
+![image](https://github.com/user-attachments/assets/2385b735-7699-4c04-96d9-950792d89654)
 
 8. To activate load balancer, and enable either of Apache or Nginx load balancer, we can achieve this by setting these in the respective environment's `env-vars` file. Open the `env-vars/uat.yml` file and set it:
 
 ```
 ---
-load_balancer_is_required: true
 enable_nginx_lb: true
 enable_apache_lb: false
+load_balancer_is_required: true
 ```
-![image](https://github.com/user-attachments/assets/bccb8d26-693c-4bd5-9408-aa1d73e170f1)
+![image](https://github.com/user-attachments/assets/6672ab18-7c24-4fa5-98d8-334816ef81ea)
 >To use apache, we can set the enable_apache_lb variable to true, and enable_nginx_lb to false. do the same thing for nginx if you want to enable nginx load balancer.
 
 
@@ -306,23 +304,84 @@ enable_apache_lb: false
 In the roles/apache/tasks/main.yml file, we need to include a task that tells ansible to first check if nginx is currently running and enabled, if it is, ansible should first stop and disable nginx before proceeding to install and enable apache. this is to avoid confliction and should always free up the port 80 for the required load balancer. use the code beow to achieve this:
 
 ```
-- name: Check if nginx is running
-  ansible.builtin.service_facts:
+---
+# Include variables and define needed variables.
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+  when: enable_nginx
 
-- name: Stop and disable nginx if it is running
-  ansible.builtin.service:
-    name: nginx
+- name: Include variables for Amazon Linux.
+  include_vars: "AmazonLinux.yml"
+  when:
+    - ansible_distribution == "Amazon"
+    - ansible_distribution_major_version == "NA"
+
+- name: Define apache_packages.
+  set_fact:
+    apache_packages: "{{ __apache_packages | list }}"
+  when: apache_packages is not defined
+
+# Setup/install tasks.
+- include_tasks: "setup-{{ ansible_os_family }}.yml"
+
+# Figure out what version of Apache is installed.
+- name: Get installed version of Apache.
+  command: "{{ apache_daemon_path }}{{ apache_daemon }} -v"
+  changed_when: false
+  check_mode: false
+  register: _apache_version
+
+- name: Create apache_version variable.
+  set_fact:
+    apache_version: "{{ _apache_version.stdout.split()[2].split('/')[1] }}"
+
+- name: Include Apache 2.2 variables.
+  include_vars: apache-22.yml
+  when: "apache_version.split('.')[1] == '2'"
+
+- name: Include Apache 2.4 variables.
+  include_vars: apache-24.yml
+  when: "apache_version.split('.')[1] == '4'"
+
+# Configure Apache.
+- name: Ensure Apache is started for UAT if enabled
+  service:
+    name: apache2
+    state: started
+    enabled: true
+  when:
+    - enable_apache_lb
+    - load_balancer_is_required
+
+- name: Stop Apache if not required
+  service:
+    name: apache2
     state: stopped
-    enabled: no
-  when: "'nginx' in services and services['nginx'].state == 'running'"
-  become: yes
+  when:
+    - not enable_apache_lb
+    - load_balancer_is_required
+
 ```
-![image](https://github.com/user-attachments/assets/da3bd137-d01f-473c-864e-e9a2dda93321)
+![image](https://github.com/user-attachments/assets/c4fb92ae-59f6-4124-bb7c-67e630f77437)
+
+![image](https://github.com/user-attachments/assets/e12c45c4-fc33-4c79-95de-5d725edb1df7)
+
 
 ### To use apache as a load balancer, we will need to allow certain apache modules that will enable the load balancer. this is the APACHE A2ENMOD
 
 - In the `roles/apache/tasks/configure-debian.yml` file, Create a task to install and enable the required apache a2enmod modules, use the code below :
 ```
+---
+- name: Configure Apache.
+  lineinfile:
+    dest: "{{ apache_server_root }}/ports.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    mode: 0644
+  with_items: "{{ apache_ports_configuration_items }}"
+  notify: restart apache
+
 - name: Enable Apache modules
   ansible.builtin.shell:
     cmd: "a2enmod {{ item }}"
@@ -336,16 +395,14 @@ In the roles/apache/tasks/main.yml file, we need to include a task that tells an
     - lbmethod_byrequests
   notify: restart apache
   become: yes
-```
-- Create another task to update the apache configurations with required code block needed for the load balancer to function. use the code below :
-```
+
 - name: Insert load balancer configuration into Apache virtual host
   ansible.builtin.blockinfile:
   path: /etc/apache2/sites-available/000-default.conf
   block: |
     <Proxy "balancer://mycluster">
-      BalancerMember http://<webserver1-ip-address>:80
-      BalancerMember http://<webserver2-ip-address>:80
+      BalancerMember http://Private IP of UAT webserver 1:80
+      BalancerMember http://Private IP of UAT webserver 2:80
       ProxySet lbmethod=byrequests
     </Proxy>
     ProxyPass "/" "balancer://mycluster/"
@@ -354,13 +411,58 @@ In the roles/apache/tasks/main.yml file, we need to include a task that tells an
   insertbefore: "</VirtualHost>"
 notify: restart apache
 become: yes
-```
 
-![image](https://github.com/user-attachments/assets/c1ad4bda-dddf-496e-8b55-36ba23deae43)
+- name: Disable Apache mods.
+  file:
+    path: "{{ apache_server_root }}/mods-enabled/{{ item }}.load"
+    state: absent
+  with_items: "{{ apache_mods_disabled }}"
+  notify: restart apache
+
+- name: Check whether certificates defined in vhosts exist.
+  stat: "path={{ item.certificate_file }}"
+  register: apache_ssl_certificates
+  with_items: "{{ apache_vhosts_ssl }}"
+  no_log: "{{ apache_ssl_no_log }}"
+
+- name: Add apache vhosts configuration.
+  template:
+    src: "{{ apache_vhosts_template }}"
+    dest: "{{ apache_conf_path }}/sites-available/{{ apache_vhosts_filename }}"
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart apache
+  when: apache_create_vhosts | bool
+
+- name: Add vhost symlink in sites-enabled.
+  file:
+    src: "{{ apache_conf_path }}/sites-available/{{ apache_vhosts_filename }}"
+    dest: "{{ apache_conf_path }}/sites-enabled/{{ apache_vhosts_filename }}"
+    state: link
+    mode: 0644
+    force: "{{ ansible_check_mode }}"
+  notify: restart apache
+  when: apache_create_vhosts | bool
+
+- name: Remove default vhost in sites-enabled.
+  file:
+    path: "{{ apache_conf_path }}/sites-enabled/{{ apache_default_vhost_filename }}"
+    state: absent
+  notify: restart apache
+  when: apache_remove_default_vhost
+```
 
 - Enable Apache (in env-vars/uat.yml)
 
-![image](https://github.com/user-attachments/assets/8146c8e2-c3f4-4f47-8d97-461e804ccb54)
+  ```
+  ---
+    enable_nginx_lb: false
+    enable_apache_lb: true
+    load_balancer_is_required: true
+  ```
+
+![image](https://github.com/user-attachments/assets/b7c32878-7de8-4079-a136-445292c5bb02)
  
 - Save and create a pull request to merge with the main branch of your github repo.
 
@@ -372,19 +474,82 @@ become: yes
 * In the `roles/nginx/tasks/main.yml` file, create a similar task like we did above to check if apache is active and enabled, if it is, it should disable and stop apache before proceeding with the tasks of installing nginx. use the code below:
 
 ```
+---
 - name: Check if Apache is running
   ansible.builtin.service_facts:
-                     
+
 - name: Stop and disable Apache if it is running
   ansible.builtin.service:
-    name: apache2 
+    name: apache2
     state: stopped
     enabled: no
   when: "'apache2' in services and services['apache2'].state == 'running'"
   become: yes
-```
 
-![image](https://github.com/user-attachments/assets/b6307e7e-7866-4d45-b5cf-8710470c7e59)
+
+# Variable setup.
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+  become: yes
+
+- name: Define nginx_user.
+  set_fact:
+    nginx_user: "{{ __nginx_user }}"
+  when: nginx_user is not defined
+  become: yes
+
+# Setup/install tasks.
+- include_tasks: setup-RedHat.yml
+  when: ansible_os_family == 'RedHat' or ansible_os_family == 'Rocky' or ansible_os_family == 'AlmaLinux'
+
+
+- include_tasks: setup-Ubuntu.yml
+  when: ansible_distribution == 'Ubuntu'
+
+
+- include_tasks: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+
+- include_tasks: setup-FreeBSD.yml
+  when: ansible_os_family == 'FreeBSD'
+
+
+- include_tasks: setup-OpenBSD.yml
+  when: ansible_os_family == 'OpenBSD'
+
+
+- include_tasks: setup-Archlinux.yml
+  when: ansible_os_family == 'Archlinux'
+
+
+- include_tasks: setup-Suse.yml
+  when: ansible_os_family == 'Suse'
+
+
+# Vhost configuration.
+- import_tasks: vhosts.yml
+  become: yes
+
+# Nginx setup.
+- name: Copy nginx configuration in place.
+  template:
+    src: "{{ nginx_conf_template }}"
+    dest: "{{ nginx_conf_file_path }}"
+    owner: root
+    group: "{{ root_group }}"
+    mode: 0644
+  notify:
+    - reload nginx
+  become: yes
+
+- name: Ensure nginx service is running as configured.
+  service:
+    name: nginx
+    state: "{{ nginx_service_state }}"
+    enabled: "{{ nginx_service_enabled }}"
+  become: yes
+```
 
 * In the roles/nginx/handlers/main.yml file, set nginx to always perform the tasks with sudo privileges, use the function : become: yes to achieve this.
   Do the same for all tasks that require sudo privileges
@@ -395,40 +560,59 @@ become: yes
 Under the nginx_vhosts section, ensure you have the same code:
 ```
 nginx_vhosts:
- - listen: "80" # default: "80"
-    server_name: "example.com" 
-    server_name_redirect: "example.com"
-    root: "/var/www/html" 
-    index: "index.php index.html index.htm" # default: "index.html index.htm"
+# Example vhost below, showing all available options:
+- listen: "80" # default: "80"
+  server_name: "example.com" # default: N/A
+  root: "/var/www/html" # default: N/A
+  index: "index.php index.htm" # default: "index.html index.htm"
+  locations:
+          - path: "/"
+            proxy_pass: "http://myapp1"
+    # filename: "example.com.conf" # Can be used to set the vhost filename.
+  server_name_redirect: "www.example.com"
+  error_page: ""
+  access_log: ""
+  error_log: ""
+  extra_parameters: ""
+  template: "{{ nginx_vhost_template }}"
+  state: "present"
+  become: yes
 
-# filename: "nginx.conf" # Can be used to set the vhost filename.
-                   
-    locations:
-      - path: "/"
-        proxy_pass: "http://myapp1"
-                   
-# Properties that are only added if defined:
-    server_name_redirect: "www.example.com" # default: N/A
-    error_page: ""
-    access_log: ""
-    error_log: ""
-    extra_parameters: "" # Can be used to add extra config blocks (multiline).
-    template: "{{ nginx_vhost_template }}" # Can be used to override the `nginx_vhost_template` per host.
-    state: "present" # To remove the vhost configuration.
-
-nginx_upstreams: 
+nginx_upstreams:
 - name: myapp1
   strategy: "ip_hash" # "least_conn", etc.
   keepalive: 16 # optional
   servers:
-    - "172.31.11.6 weight=5"
-    - "172.31.11.238 weight=5"
+    - "172.31.28.208 weight=5"
+    - "172.31.24.16 weight=5"
+  become: yes
+
+nginx_log_format: |-
+  '$remote_addr - $remote_user [$time_local] "$request" '
+  '$status $body_bytes_sent "$http_referer" '
+  '"$http_user_agent" "$http_x_forwarded_for"'
+become: yes
 ```
 
-![image](https://github.com/user-attachments/assets/cbe22fd7-6664-4758-8591-16e5d284618c)
+* Finally, update the `inventory/uat.yml` to include the neccesary details for ansible to connect to each of these servers to perform all the roles we have specified. use the code below. Update `roles/nginx/templates/nginx.conf.j2` Comment the line `include {{ nginx_vhost_path }}/*`;
 
-* Finally, update the `inventory/uat.yml` to include the neccesary details for ansible to connect to each of these servers to perform all the roles we have specified. use the code below:
-  Update `roles/nginx/templates/nginx.conf.j2` Comment the line `include {{ nginx_vhost_path }}/*`;
+```
+
+     {% for vhost in nginx_vhosts %}
+    server {
+        listen {{ vhost.listen }};
+        server_name {{ vhost.server_name }};
+        root {{ vhost.root }};
+        index {{ vhost.index }};
+
+    {% for location in vhost.locations %}
+        location {{ location.path }} {
+            proxy_pass {{ location.proxy_pass }};
+        }
+    {% endfor %}
+  }
+```
+![image](https://github.com/user-attachments/assets/9f16d50c-9bef-4eeb-a6b3-c0533a5902fb)
 
 
 ## Step 5 : Configure your webserver roles to install php and all its dependencies , as well as cloning tooling website from github repo.
