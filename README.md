@@ -773,7 +773,7 @@ ansible-playbook -i inventory/uat.yml playbooks/site.yml
 3. Test Loadbalancer public IP on browser:
 
 ```
-http://<Public IP address of LB server>/info.php
+http://<Public IP address of LB server>/index.php
 ```
 ![image](https://github.com/user-attachments/assets/7acdcec3-b9d2-49d5-aa0f-2b70500520e5)
 
